@@ -1,0 +1,12 @@
+IdempotentDeploy: true
+
+ClusterName: "eks-basic"
+ServiceRoleName: "eks-service-role"
+
+NetworkStackName: "eks-vpc"
+NetworkStackTemplateURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/amazon-eks-vpc-sample.yaml"
+
+CreateWorkerNodes: false
+WorkerStackName: "eks-basic-minions"
+
+DeployKubeUI: false
