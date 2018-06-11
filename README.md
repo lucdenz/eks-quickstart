@@ -1,7 +1,7 @@
-# EKS Basic
+# EKS Quickstart
 Amazon EKS is a Fully managed Kubernetes control plane (Master). The setup involves running AWS services and installing local cli tools.
 
-## What is EKS Basic
+## What is EKS Quickstart
 An application that provisions an EKS cluster and associated client.
 
 ## Prerequisites
