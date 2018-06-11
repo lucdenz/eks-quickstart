@@ -1,5 +1,3 @@
-IdempotentDeploy: true
-
 ClusterName: "eks-basic"
 ServiceRoleName: "eks-service-role"
 
