@@ -5,6 +5,7 @@ import yaml
 import boto3
 from botocore.exceptions import ClientError
 import sys
+import time
 
 # Pull in the config file
 with open("config.yaml", "r") as config:
@@ -28,6 +29,7 @@ def exceptionHandler(exception):
         sys.exit()
 
 # Create a Service Role for EKS (Uses mature resource API)
+# Returns the ARN as a string
 def createEKSRole(roleName):
     try:
         iam = boto3.resource("iam")
@@ -62,6 +64,7 @@ def deleteEKSRole(roleName):
         exceptionHandler(e)
 
 # Create the EKS VPC Network (Have to use low level client for waiters)
+# Returns a list of dict items
 def createEKSClusterVPC(stackName, templateURL):
     try:
         client = boto3.client("cloudformation")
@@ -74,7 +77,10 @@ def createEKSClusterVPC(stackName, templateURL):
             StackName=stackName
         )
         print("INFO: Created [" + stackName + "] using CloudFormation")
-        return response
+        response = client.describe_stacks(
+            StackName=stackName
+        )
+        return response["Stacks"][0]["Outputs"]
     except ClientError as e:
         exceptionHandler(e)
 
@@ -96,16 +102,73 @@ def deleteEKSClusterVPC(stackName):
 # TODO
 # Create the actual EKS Cluster
 # Use stack.outputs["key"] from CloudFormation
-# kubectl cluster-info
-def createEKSCluster(clusterName):
-    return True
+# Need these wait helpers until EKS waiters are made
+def waitEKSClusterActive(clusterName):
+    client = boto3.client("eks")
+    clusterNotActive = True
+
+    while clusterNotActive:
+        time.sleep(30)
+        resource = client.describe_cluster(
+            name=clusterName
+        )
+        if resource["cluster"]["status"] == "ACTIVE":
+            clusterNotActive = False
+
+def waitEKSClusterDeleted(clusterName):
+    client = boto3.client("eks")
+    clusterDeleting = True
+
+    while clusterDeleting:
+        time.sleep(30)
+        resource = client.delete_cluster(
+            name=clusterName
+        )
+        if resource["cluster"]["status"] != "DELETING":
+            clusterDeleting = False
+
+def createEKSCluster(clusterName, roleArn, networkStackOutputs):
+    for i in networkStackOutputs:
+        if i["OutputKey"] == "SecurityGroups":
+            securityGroup = i["OutputValue"]
+        if i["OutputKey"] == "SubnetIds":
+            subnetList = i["OutputValue"].split(",")
+
+    try:
+        client = boto3.client("eks")
+        response = client.create_cluster(
+            name=clusterName,
+            roleArn=roleArn,
+            resourcesVpcConfig={
+                "subnetIds": subnetList,
+                "securityGroupIds": [
+                    securityGroup
+                ]
+            }
+        )
+        waitEKSClusterActive(clusterName)
+        print("INFO: Created [" + clusterName + "] EKS cluster successfully")
+    except ClientError as e:
+        exceptionHandler(e)
 
 def deleteEKSCluster(clusterName):
-    return True
+    try:
+        client = boto3.client("eks")
+        response = client.delete_cluster(
+            name=clusterName
+        )
+        waitEKSClusterDeleted(clusterName)
+        print("INFO: Deleted [" + clusterName + "] successfully")
+    except ClientError as e:
+        exceptionHandler(e)
+
+        
+
 
 # TODO
 # Link the cluster to the kubectl CLI by creating a kubeconfig file
 # export KUBECONFIG=$KUBECONFIG:~/.kube/config-<clustername>
+# kubectl cluster-info
 
 # TODO
 # Create a set of minions by running a CloudFormation template
@@ -117,10 +180,11 @@ def deleteEKSCluster(clusterName):
 # kubectl apply -f aws-auth-cm.yaml
 
 
-deleteEKSRole(SERVICE_ROLE_NAME)
-ServiceRoleARN = createEKSRole(SERVICE_ROLE_NAME)
-
-deleteEKSClusterVPC(NETWORK_STACK_NAME)
-NetworkStackId = createEKSClusterVPC(NETWORK_STACK_NAME, NETWORK_STACK_TEMPLATE_URL)
+# deleteEKSCluster(CLUSTER_NAME)
+# deleteEKSClusterVPC(NETWORK_STACK_NAME)
+# deleteEKSRole(SERVICE_ROLE_NAME)
 
 
+# serviceRoleARN = createEKSRole(SERVICE_ROLE_NAME)
+# networkStackOutputs = createEKSClusterVPC(NETWORK_STACK_NAME, NETWORK_STACK_TEMPLATE_URL)
+# createEKSCluster(CLUSTER_NAME, serviceRoleARN, networkStackOutputs)

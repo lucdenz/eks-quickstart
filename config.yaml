@@ -1,4 +1,4 @@
-ClusterName: "eks-basic"
+ClusterName: "eks-quickstart"
 ServiceRoleName: "eks-service-role"
 
 NetworkStackName: "eks-vpc"
