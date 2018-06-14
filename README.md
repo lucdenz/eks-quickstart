@@ -24,13 +24,13 @@ In AWS land we will have:
 - Worker EC2 nodes to attach to the Cluster for pod deployment
 
 ### Installation
-pip install -e .
-pip install --trusted-host pypi.python.org -r requirements.txt
-eksbase
+- pip install -e .
+- pip install --trusted-host pypi.python.org -r requirements.txt
+- eksbase
 
-docker build -t awskube .
-source ~/.aws/awscreds.sh
-docker run -it --rm --env-file ~/.aws/awscreds.sh awskube /bin/ash
+- docker build -t awskube .
+- source ~/.aws/awscreds.sh
+- docker run -it --rm --env-file ~/.aws/awscreds.sh awskube /bin/ash
 
 ## Notes
 - docker run -it --rm -v ~/:/data python:alpine /bin/ash
