@@ -1,20 +1,24 @@
-from setuptools import setup
+import setuptools
 
-setup(
-    name="ekscore",
-    version="0.1",
-    description="A basic project using Amazon EKS.",
-    author="lucdenz",
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+    name="eksbase",
+    version="0.0.1",
+    author="Luc Denereaz",
     author_email="lucdenz@protonmail.com",
-    url="https://github.com/lucdenz/ekscore",
-    license="MIT",
-    packages=["ekscore"],
-    install_requires=[
-        "awscli",
-        "boto3"
-    ],
+    description="A basic project using Amazon EKS",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/lucdenz/eksbase",
+    packages=setuptools.find_packages(),
+    classifiers=(
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ),
     entry_points={
-        "console_scripts": ["ekscore=ekscore.cli:main"]
-    },
-    zip_safe=False
+        "console_scripts": ["eksbase=eksbase.cli:main"]
+    }
 )

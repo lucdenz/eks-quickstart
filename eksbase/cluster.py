@@ -1,16 +1,22 @@
+"""
+TODO
+- return the endpoint url and cert from the createEKSCluster call for use in
+  generating a kubeconfig file
+"""
+
 import time
 import boto3
 from botocore.exceptions import ClientError
 
-from .utils import exceptionHandler
+from eksbase.utils import exceptionHandler
 
 # Create a Service Role for EKS (Uses mature resource API)
 # Returns the ARN as a string
-def createEKSRole(roleName):
+def createEKSRole(serviceRoleName):
     try:
         iam = boto3.resource("iam")
         role = iam.create_role(
-            RoleName=roleName,
+            RoleName=serviceRoleName,
             AssumeRolePolicyDocument='{ "Version": "2012-10-17", "Statement": [ { "Sid": "", "Effect": "Allow", "Principal": { "Service": "eks.amazonaws.com" }, "Action": "sts:AssumeRole" } ]}'
         )       
         response = role.attach_policy(
@@ -19,15 +25,15 @@ def createEKSRole(roleName):
         response = role.attach_policy(
             PolicyArn="arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
         )
-        print("INFO: Created [" + roleName + "] using IAM with managed policies")
+        print("INFO: Created [" + serviceRoleName + "] using IAM with managed policies")
         return role.arn
     except ClientError as e:
         exceptionHandler(e)
 
-def deleteEKSRole(roleName):
+def deleteEKSRole(serviceRoleName):
     try:
         iam = boto3.resource("iam")
-        role = iam.Role(roleName)
+        role = iam.Role(serviceRoleName)
         response = role.detach_policy(
             PolicyArn="arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
         )
@@ -35,40 +41,40 @@ def deleteEKSRole(roleName):
             PolicyArn="arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
         )
         response = role.delete()
-        print("INFO: Deleted [" + roleName + "] successfully")
+        print("INFO: Deleted [" + serviceRoleName + "] successfully")
     except ClientError as e:
         exceptionHandler(e)
 
 # Create the EKS VPC Network (Have to use low level client for waiters)
 # Returns a list of dict items
-def createEKSClusterVPC(stackName, templateURL):
+def createEKSClusterVPC(networkStackName, networkStackTemplateURL):
     try:
         client = boto3.client("cloudformation")
         waiter = client.get_waiter('stack_create_complete')
         response = client.create_stack(
-            StackName=stackName,
-            TemplateURL=templateURL
+            StackName=networkStackName,
+            TemplateURL=networkStackTemplateURL
         )
         waiter.wait(
-            StackName=stackName
+            StackName=networkStackName
         )
-        print("INFO: Created [" + stackName + "] using CloudFormation")
+        print("INFO: Created [" + networkStackName + "] using CloudFormation")
         response = client.describe_stacks(
-            StackName=stackName
+            StackName=networkStackName
         )
         return response["Stacks"][0]["Outputs"]
     except ClientError as e:
         exceptionHandler(e)
 
-def deleteEKSClusterVPC(stackName):
+def deleteEKSClusterVPC(networkStackName):
     try:
         client = boto3.client("cloudformation")
         waiter = client.get_waiter('stack_delete_complete')
         response = client.delete_stack(
-            StackName=stackName
+            StackName=networkStackName
         )
         waiter.wait(
-            StackName=stackName
+            StackName=networkStackName
         )
         print("INFO: Deleted [" + stackName + "] successfully")
     except ClientError as e:
@@ -88,7 +94,7 @@ def waitEKSClusterActive(clusterName):
         if resource["cluster"]["status"] == "ACTIVE":
             clusterNotActive = False
 
-def createEKSCluster(clusterName, roleArn, networkStackOutputs):
+def createEKSCluster(clusterName, serviceRoleArn, networkStackOutputs):
     for i in networkStackOutputs:
         if i["OutputKey"] == "SecurityGroups":
             securityGroup = i["OutputValue"]
@@ -99,7 +105,7 @@ def createEKSCluster(clusterName, roleArn, networkStackOutputs):
         client = boto3.client("eks")
         response = client.create_cluster(
             name=clusterName,
-            roleArn=roleArn,
+            roleArn=serviceRoleArn,
             resourcesVpcConfig={
                 "subnetIds": subnetList,
                 "securityGroupIds": [

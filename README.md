@@ -1,7 +1,7 @@
-# EKS Core
+# EKS Base
 Amazon EKS is a Fully managed Kubernetes control plane (Master). The setup involves running AWS services and installing local cli tools.
 
-## What is EKS Core
+## What is EKS Base
 An application that provisions an EKS cluster and associated client.
 
 ## Prerequisites
@@ -24,14 +24,16 @@ In AWS land we will have:
 - Worker EC2 nodes to attach to the Cluster for pod deployment
 
 ### Installation
-pip install -r requirements.txt
-pip install .
-ekscore
+pip install -e .
+pip install --trusted-host pypi.python.org -r requirements.txt
+eksbase
 
 docker build -t awskube .
 source ~/.aws/awscreds.sh
-docker run -it --rm --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY awskube /bin/ash
+docker run -it --rm --env-file ~/.aws/awscreds.sh awskube /bin/ash
 
 ## Notes
 - docker run -it --rm -v ~/:/data python:alpine /bin/ash
+- docker run -it --rm --env-file ~/.aws/awscreds.sh -w /data/GitHub/eksbase -v ~/:/data python:alpine /bin/ash
 - docker rmi $(docker images -q)
+- pip freeze | xargs pip uninstall -y
