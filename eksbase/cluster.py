@@ -76,7 +76,7 @@ def deleteEKSClusterVPC(networkStackName):
         waiter.wait(
             StackName=networkStackName
         )
-        print("INFO: Deleted [" + stackName + "] successfully")
+        print("INFO: Deleted [" + networkStackName + "] successfully")
     except ClientError as e:
         exceptionHandler(e)
 
