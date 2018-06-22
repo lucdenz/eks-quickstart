@@ -36,4 +36,5 @@ In AWS land we will have:
 - docker run -it --rm -v ~/:/data python:alpine /bin/ash
 - docker run -it --rm --env-file ~/.aws/awscreds.sh -w /data/GitHub/eksbase -v ~/:/data python:alpine /bin/ash
 - docker rmi $(docker images -q)
+- docker ps -aq --no-trunc -f status=exited | xargs docker rm
 - pip freeze | xargs pip uninstall -y

@@ -1,16 +1,20 @@
 from eksbase.config import *
-from eksbase.cluster import *
+from eksbase.aws.cluster import *
+from eksbase.kubedock.clientbuild import *
 
 def run():
-    deleteEKSCluster(CLUSTER_NAME)
-    deleteEKSClusterVPC(NETWORK_STACK_NAME)
-    deleteEKSRole(SERVICE_ROLE_NAME)
+    deleteCluster(CLUSTER_NAME)
+    deleteVPC(NETWORK_STACK_NAME)
+    deleteServiceRole(SERVICE_ROLE_NAME)
 
     """
-    serviceRoleARN = createEKSRole(SERVICE_ROLE_NAME)
-    networkStackOutputs = createEKSClusterVPC(
+    serviceRole = createServiceRole(SERVICE_ROLE_NAME)
+    networkStackOutputs = createVPC(
         NETWORK_STACK_NAME, 
         NETWORK_STACK_TEMPLATE_URL
     )
-    createEKSCluster(CLUSTER_NAME, serviceRoleARN, networkStackOutputs)
+    createCluster(CLUSTER_NAME, serviceRole.arn, networkStackOutputs)
+
+    cluster = describeCluster(CLUSTER_NAME)
+    buildDockerImage(cluster)
     """
